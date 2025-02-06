@@ -1,158 +1,103 @@
-import React, {useState} from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from "axios";
-import "./TimeTableTeacher.css";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import img from '../Images/student1.jpeg';
+import "./TimeTable.css";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-const Studentprofile = () => {
-    const navigate = useNavigate();
-    const [showDropdown, setShowDropdown] = useState(false);
+import axios from 'axios';
+import Teachnav from "./teachernav.jsx";
 
+
+
+const StudentTimetable = () => {
+  const [timetableUrl, setTimetableUrl] = useState(null);
+  const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [teacherEmail, setTeacherEmail] = useState(null);
+
+  // Fetch teacher email from Teachnav component
+  const getEmail = (email) => {
+    setTeacherEmail(email);
+  };
+
+  // Fetch timetable on component mount
+  useEffect(() => {
+    const fetchTimetable = async () => {
+      if (!teacherEmail) return;
+
+      try {
+        const response = await axios.post(`https://school-erp-system-ufbu.onrender.com/principal/getTimetable/`, {
+          email: teacherEmail,
+        });
+        if (response.data.image) {
+          setTimetableUrl(response.data.image);
+        } else {
+          toast.info("No timetable found for your class.");
+        }
+      } catch (error) {
+        console.error("Error fetching timetable:", error.response?.data || error.message);
+        toast.error('Failed to load timetable. Please try again later.');
+      }
+    };
+
+    fetchTimetable();
+  }, [teacherEmail]);
+
+  // Toggle dropdown menu
   const handlePhotoClick = () => {
     setShowDropdown(!showDropdown);
   };
 
+  // Logout logic
   const handleLogout = () => {
-    // Add logout logic here
-    toast.success('Logout Successfully!', {
+    toast.success('Logged out successfully!', {
       position: "top-right",
       autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
     });
     setTimeout(() => {
       navigate('/');
     }, 2000);
   };
 
+  // Handle clicks outside the dropdown to close it
   const handleOutsideClick = (e) => {
     if (!e.target.closest('.student-photo-container')) {
       setShowDropdown(false);
     }
   };
 
-  return(               
-        <div id="displayStudTT">
-        <div className="student-navbar">
-        <div className="student-details">
-          <h2 className="student-name">John Doe</h2>
-          <p className="student-reg-no">Reg No: 123456789</p>
-          <p className="student-reg-no">Teacher</p>
+  return (
+    <div id="displayStudTT" onClick={handleOutsideClick}>
+      {/* Navbar */}
+      <div id="teachnav">
+      <Teachnav getEmail={(email) => getEmail(email)} />
+      </div>
+
+      {/* Back button */}
+      <div className="format">
+        <div className="home-button-container">
+          <button className="home-button" onClick={() => navigate('/')}>
+            <i className="fa fa-arrow-left" aria-hidden="true"></i> Back
+          </button>
         </div>
-        <div className="student-photo-container">
-        <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div
-                className="dropdown-menu">
-                <ul>
-                  <li>
-                    <a >John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
       </div>
 
-      <div div className="format">
-      <div className="home-button-container">
-        <button className="home-button" onClick={() => navigate('/Teacherprofile/TimeTablepage')}>
-        <i class="fa fa-arrow-left" aria-hidden="true"></i> Back
-        </button>
+      {/* Timetable display */}
+      <div className="container-fluid">
+        <h2>Time Table</h2>
+        <div className="table-responsive">
+          {timetableUrl ? (
+            <img src={timetableUrl} alt="Timetable" className="uploaded-timetable" />
+          ) : (
+            <p>No timetable uploaded yet.</p>
+          )}
+        </div>
       </div>
-      </div>
-                            <div className="container-fluid">
-                                    <h2>Time Table</h2>
-                                    <div className="table-responsive">
-                                    <table className="table time-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Day</th>
-                                                <th>9:30-10:20</th>
-                                                <th>10:20-11:10</th>
-                                                <th>11:10-12:00</th>
-                                                <th>12:00-12:40</th>
-                                                <th>12:40-1:30</th>
-                                                <th>1:30-2:20</th>
-                                                <th>2:20-3:10</th>
-                                                <th>3:10-4:00</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td className="highlight"><b>Monday</b></td>
-                                                <td>English</td>
-                                                <td>Math</td>
-                                                <td>Chemistry</td>
-                                                <td rowSpan="6" className="special"><b>LUNCH</b></td>
-                                                <td colSpan="3" className="special">LAB</td>
-                                                <td>Physics</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="highlight"><b>Tuesday</b></td>
-                                                <td colSpan="3" className="special">LAB</td>
-                                                <td>English</td>
-                                                <td>Chemistry</td>
-                                                <td>Math</td>
-                                                <td className="special">SPORTS</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="highlight"><b>Wednesday</b></td>
-                                                <td>Math</td>
-                                                <td>Physics</td>
-                                                <td>English</td>
-                                                <td>Chemistry</td>
-                                                <td colSpan="3">LIBRARY</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="highlight"><b>Thursday</b></td>
-                                                <td>Physics</td>
-                                                <td>English</td>
-                                                <td>Chemistry</td>
-                                                <td colSpan="3" className="special">LAB</td>
-                                                <td>Math</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="highlight"><b>Friday</b></td>
-                                                <td colSpan="3" className="special">LAB</td>
-                                                <td>Math</td>
-                                                <td>Chemistry</td>
-                                                <td>English</td>
-                                                <td>Physics</td>
-                                            </tr>
-                                            <tr>
-                                                <td className="highlight"><b>Saturday</b></td>
-                                                <td>English</td>
-                                                <td>Chemistry</td>
-                                                <td>Math</td>
-                                                <td colSpan="3">SEMINAR</td>
-                                                <td className="special">SPORTS</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <ToastContainer />
-                        </div>
 
+      {/* Toast notifications */}
+      <ToastContainer />
+    </div>
   );
 };
 
-export default Studentprofile;
+export default StudentTimetable;

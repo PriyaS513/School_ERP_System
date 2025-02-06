@@ -5,6 +5,8 @@ import axios from "axios";
 import Carousel from 'react-multi-carousel';
 import 'react-multi-carousel/lib/styles.css';
 
+
+
 const Notice = () => {
     const [Notices, setNotices] = useState([]);
 

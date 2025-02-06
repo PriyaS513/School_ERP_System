@@ -1,75 +1,91 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './Teacprofile.css';
 import img from '../Images/student1.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+
+
+
 const StudentInfo = () => {
   const navigate = useNavigate();
+  //const [teacherData, setTeacherData] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [teacherData, setTeacherData] = useState(null);
+  const teacherEmail = localStorage.getItem("teacherEmail");
+
+
+  useEffect(() => {
+    if (!teacherEmail) {
+      toast.error('No teacher email found!', {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      return;
+    }
+
+    // Fetch teacher profile based on the teacherEmail
+    axios.post(`https://school-erp-system-ufbu.onrender.com/principal/teacher-profile/`, { email: teacherEmail })
+      .then(response => {
+        setTeacherData(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching teacher profile:", error);
+        toast.error("Failed to fetch teacher data!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      });
+  }, [teacherEmail]);
 
   const handlePhotoClick = () => {
     setShowDropdown(!showDropdown);
   };
 
   const handleLogout = () => {
-    // Add logout logic here
     toast.success('Logout Successfully!', {
       position: "top-right",
       autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
     });
     setTimeout(() => {
       navigate('/');
     }, 2000);
   };
 
-  const handleOutsideClick = (e) => {
-    if (!e.target.closest('.student-photo-container')) {
-      setShowDropdown(false);
-    }
-  };
+  if (!teacherData) {
+    return <p>Loading...</p>;
+  }
 
   return (
-    <div id = "Teacprofile" onClick={handleOutsideClick}>
-    <div className="student-info-container">
-           <div className="student-navbar">
-        <div className="student-details">
-          <h2 className="student-name">John Doe</h2>
-          <p className="student-reg-no">Reg No: 123456789</p>
-          <p className="student-reg-no">Teacher</p>
-        </div>
-        <div className="student-photo-container">
-        <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
+    <div id="Teacprofile">
+      <div className="student-info-container">
+        <div className="student-navbar">
+          <div className="student-details">
+            <h2 className="student-name">{teacherData.name}</h2>
+            <p className="student-reg-no">Reg No: {teacherData.regid}</p>
+            <p className="student-reg-no">{teacherData.post}</p>
+          </div>
+          <div className="student-photo-container">
+          <img
+  src={teacherData.image ? teacherData.image : img}
+  alt="Teacher"
+  className="student-photo"
+  onClick={handlePhotoClick}
+/>
             {showDropdown && (
-              <div
-                className="dropdown-menu">
+              <div className="dropdown-menu">
                 <ul>
-                  <li>
-                    <a >John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
+                  <li>{teacherData.name}</li>
+                  <li>{teacherData.email}</li>
+                  <li onClick={handleLogout}>Logout</li>
                 </ul>
               </div>
             )}
           </div>
-      </div>
+        </div>
+
 
       <div className="cards-container">
         <div className="card3">

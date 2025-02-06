@@ -1,103 +1,112 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import './Studprofile.css';
 import img from '../Images/student1.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+
+
+
 
 const StudentInfo = () => {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [studentData, setStudentData] = useState(null);
+  const studentRegid = localStorage.getItem("studentRegid");
+
+  useEffect(() => {
+    if (!studentRegid) {
+      toast.error('No student Register Id found!', {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      return;
+    }
+
+    // Fetch student profile based on the studentEmail
+    axios.post(`https://school-erp-system-ufbu.onrender.com/Teachers/student-profile/`, { regid: studentRegid })
+      .then(response => {
+        setStudentData(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching student profile:", error);
+        toast.error("Failed to fetch student data!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+      });
+  }, [studentRegid]);
 
   const handlePhotoClick = () => {
     setShowDropdown(!showDropdown);
   };
 
   const handleLogout = () => {
-    // Add logout logic here
     toast.success('Logout Successfully!', {
       position: "top-right",
       autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
     });
     setTimeout(() => {
       navigate('/');
     }, 2000);
   };
 
-  const handleOutsideClick = (e) => {
-    if (!e.target.closest('.student-photo-container')) {
-      setShowDropdown(false);
-    }
-  };
+  if (!studentData) {
+    return <p>Loading...</p>;
+  }
 
   return (
-    <div id="Studprofile" onClick={handleOutsideClick}>
-    <div className="student-info-container">
-      <div className="student-navbar">
-        <div className="student-details">
-          <h2 className="student-name">John Doe</h2>
-          <p className="student-reg-no">Reg No: 123456789</p>
-          <p className="student-reg-no">Seventh</p>
-        </div>
-        <div className="student-photo-container">
-        <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div
-                className="dropdown-menu">
+    <div id="Studprofile">
+      <div className="student-info-container">
+        <div className="student-navbar">
+          <div className="student-details">
+            <h2 className="student-name">{studentData.name}</h2>
+            <p className="student-reg-no">Reg No: {studentData.regid}</p>
+            <p className="student-reg-no">{studentData.sclass}</p>
+          </div>
+          <div className="student-photo-container">
+          <img
+  src={studentData.image ? studentData.image : img}
+  alt="Teacher"
+  className="student-photo"
+  onClick={handlePhotoClick}
+/>            {showDropdown && (
+              <div className="dropdown-menu">
                 <ul>
-                  <li>
-                    <a >John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a >Seventh</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
+                  <li>{studentData.name}</li>
+                  <li>Reg No: {studentData.regid}</li>
+                  <li>Class: {studentData.sclass}</li>
+                  <li onClick={handleLogout}>Logout</li>
                 </ul>
               </div>
             )}
           </div>
-      </div>
+        </div>
 
-      <div className="cards-container">
-        <div className="card3">
-          <div className="box attendance">
-            <div className="content">
-              <i className="fas fa-calendar-check"></i>
-              <h3>Attendance</h3>
-              <p>Your attendance details.</p>
-              <a onClick={() => navigate('/Studentprofile/Attendance')}>View Attendance</a>
+        <div className="cards-container">
+          <div className="card3">
+            <div className="box attendance">
+              <div className="content">
+                <i className="fas fa-calendar-check"></i>
+                <h3>Attendance</h3>
+                <p>Your attendance details.</p>
+                <a onClick={() => navigate('/Studentprofile/Attendance')}>View Attendance</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="card3">
+            <div className="box timetable">
+              <div className="content">
+                <i className="fas fa-calendar-alt"></i>
+                <h3>Time Table</h3>
+                <p>Your class schedule.</p>
+                <a onClick={() => navigate('/Studentprofile/TimeTable')}>View Time Table</a>
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="card3">
-          <div className="box timetable">
-            <div className="content">
-              <i className="fas fa-calendar-alt"></i>
-              <h3>Time Table</h3>
-              <p>Your class schedule.</p>
-              <a onClick={() => navigate('/Studentprofile/TimeTable')}>View Time Table</a>
-            </div>
-          </div>
-        </div>
-      </div>
       </div>
       <ToastContainer />
     </div>

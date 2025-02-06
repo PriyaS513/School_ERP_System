@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -8,58 +9,43 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Button from '@mui/material/Button';
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
 import { useNavigate } from 'react-router-dom';
-import img from "../Images/student1.jpeg";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { confirmAlert } from 'react-confirm-alert'; // Import
-import 'react-confirm-alert/src/react-confirm-alert.css'; 
+
+
+
 
 const columns = [
-  
-  { id: 'regid', label: 'Reg Id'},
-  { id: 'email', label: 'Email'},
-  {
-    id: 'name',
-    label: 'name',
-  },
-  {
-    id: 'sclass',
-    label: 'Class',
-  },
-  {
-    id: 'actions',
-    label: 'Actions', 
-  },
+  { id: 'regid', label: 'Reg Id' },
+  { id: 'email', label: 'Email' },
+  { id: 'name', label: 'Name' },
+  { id: 'sclass', label: 'Class' },
+  { id: 'actions', label: 'Actions' },
 ];
 
-function createData(regid, email, name, sclass) {
-  
-  return { regid, email, name, sclass };
-}
-
-const rows = [
-  createData('S0121212', 'a@gmail.com', 'AAAA', 3),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 9),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 3),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 3),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-  createData('S0121212', 'a@gmail.com', 'AAAA', 2),
-];
- function StickyHeadTable() {
+function StickyHeadTable() {
   const navigate = useNavigate();
+  const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
-  const [selected] = React.useState([]);
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`https://school-erp-system-ufbu.onrender.com/principal/teacherslist/`);
+        setTeachers(response.data);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTeachers();
+  }, []);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -71,169 +57,101 @@ const rows = [
   };
 
 
-  const handleEdit = (row) => {
-    console.log(`Edit row: ${row.name}`);
-    navigate(`/EditTeacher/${row.regid}`, { state: row });
-  };
-
-  const handleDelete = (row) => {
+  const handleDelete = async (row) => {
     confirmAlert({
       title: 'Confirm to delete',
       message: 'Are you sure to delete this item?',
       buttons: [
         {
           label: 'Yes',
-          onClick: () => {
+          onClick: async () => {
             console.log(`Delete row: ${row.name}`);
             // Add delete logic here
-          }
-        },
-        {
-          label: 'No',
-          onClick: () => {}
-        }
-      ]
-    });
-  };
-
-const [showDropdown, setShowDropdown] = useState(false);
-
-  const handlePhotoClick = () => {
-    setShowDropdown(!showDropdown);
-  };
-
-  const handleLogout = () => {
-    // Add logout logic here
-    toast.success('Logout Successfully!', {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-    });
-    setTimeout(() => {
-      navigate('/');
-    }, 2000);
-  };
-
-  const handleOutsideClick = (e) => {
-    if (!e.target.closest('.student-photo-container')) {
-      setShowDropdown(false);
+       
+           try {
+               await axios.delete(`https://school-erp-system-ufbu.onrender.com/principal/deleteteacher/${row.email}/`);
+                setTeachers(teachers.filter(teacher => teacher.regid !== row.regid));
+              } 
+    
+    catch (error) {
+      console.error(error);
     }
+  }
+},
+{
+  label: 'No',
+  onClick: () => {}
+}
+]
+});
   };
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
+  if (error) {
+    return <p>Error: {error}</p>;
+  }
 
   return (
-    <div id="StudentList" onClick={handleOutsideClick}>
-                <div className="student-info-container">
-       <div className="student-navbar">
-        <div className="student-details">
-          <h2 className="student-name">John Doe</h2>
-          <p className="student-reg-no">Reg No: 123456789</p>
-          <p className="student-reg-no">Principal</p>
-        </div>
-        <div className="student-photo-container">
-        <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div
-                className="dropdown-menu">
-                <ul>
-                  <li>
-                    <a >John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-      </div>
-      </div>
-      {/* < div className="format"> */}
-      <div className="home-button-container">
-        <button className="home-button" onClick={() => navigate('/Principalprofile')}>
-        <i class="fa fa-arrow-left" aria-hidden="true"></i> Back
-        </button>
-      </div>
-      <Paper sx={{ width: '100%', overflow:'hidden' }}>
-        <TableContainer sx={{ maxHeight: 600 }}>
-          <Table stickyHeader aria-label="sticky table">
-            <TableHead>
-              <TableRow>
-                
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.id}
-                    align={column.align}
-                    style={{ minWidth: column.minWidth }}
-                  >
-                    {column.label}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows
-               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-               .map((row) => {
-                  const isSelected = selected.indexOf(row.code)!== -1;
-                  return (
-                    <TableRow
-                      hover
-                      role="checkbox"
-                      tabIndex={-1}
-                      key={row.code}
-                      selected={isSelected}
-                    >
-                     
-                      {columns.map((column) => {
-                        if (column.id === 'actions') {
-                          return (
-                            <TableCell key={column.id} align={column.align}>
-                              <Button sx={{ color: 'green' }} onClick={() => handleEdit(row)}>Edit</Button>
-                              <Button sx={{ color: 'red' }} onClick={() => handleDelete(row)}>Delete</Button>
-                            </TableCell>
-                          );
-                        }
-                        const value = row[column.id];
+    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      <TableContainer sx={{ maxHeight: 600 }}>
+        <Table stickyHeader aria-label="sticky table">
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  align={column.align}
+                  style={{ minWidth: column.minWidth }}
+                >
+                  {column.label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {teachers
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((row) => {
+                return (
+                  <TableRow hover role="checkbox" tabIndex={-1} key={row.regid}>
+                    {columns.map((column) => {
+                      if (column.id === 'actions') {
                         return (
                           <TableCell key={column.id} align={column.align}>
-                            {column.format && typeof value === 'number'
-                             ? column.format(value)
-                              : value}
+                            <Button sx={{ color: 'red' }} onClick={() => handleDelete(row)}>
+                              Delete
+                            </Button>
                           </TableCell>
                         );
-                      })}
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 100]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
-      <ToastContainer />
-    </div>
+                      }
+                      const value = row[column.id];
+                      return (
+                        <TableCell key={column.id} align={column.align}>
+                          {column.format && typeof value === 'number'
+                            ? column.format(value)
+                            : value}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        rowsPerPageOptions={[10, 25, 100]}
+        component="div"
+        count={teachers.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      />
+    </Paper>
   );
 }
 

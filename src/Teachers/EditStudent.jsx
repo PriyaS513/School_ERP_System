@@ -5,8 +5,13 @@ import QRCode from "react-qr-code";
 import img from "../Images/student1.jpeg";
 import axios from "axios";
 import "./Form.css";
-const EditStudent = () => {
+import { toast } from "react-toastify";
+import ReactDOM from "react-dom";
+import Teachnav from "./teachernav.jsx";
 
+
+
+const EditStudent = () => {
   const { state } = useLocation();
   const [name, setName] = useState(state.name);
   const [sclass, setSclass] = useState(state.sclass);
@@ -82,79 +87,58 @@ const EditStudent = () => {
 
   const handleInputChangePhoto = (event) => {
     const file = event.target.files[0];
-    const fileType = file.type;
-    const fileSize = file.size;
-
-    if (!["image/jpeg", "image/gif", "image/png"].includes(fileType)) {
-      alert("Only JPG, GIF and PNG files are allowed");
+    if (!file) return;
+    
+    if (!file.type.match("image.*")) {
+      alert("Please select a valid image file.");
       return;
     }
-
-    if (fileSize > 819200) {
-      alert("File size exceeds 800KB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImage(reader.result);
-    };
-    reader.readAsDataURL(file);
+    
+    setStudformData({ ...StudformData, image: file });
+    setImage(URL.createObjectURL(file));
   };
-
-  const handleInputChange = (event) => {
-    if (event.target.name === "image") {
-      // If the input is an image, set the image property in formData
-      setStudformData({
-        ...StudformData,
-        image: event.target.files[0], // Set the image file
-      });
-    } else {
-      // For other inputs, update the formData as usual
-      setStudformData({
-        ...StudformData,
-        [event.target.name]: event.target.value,
-      });
-    }
-    setErrors({});
-  };
-  
   const handleSubmit = async (event) => {
     event.preventDefault();
     const errors = validateForm(StudformData);
     if (Object.keys(errors).length === 0) {
-      // Form is valid, submit the data
       try {
         const formDataToSend = new FormData();
-        // Append all form data to formDataToSend
         Object.keys(StudformData).forEach((key) => {
-          formDataToSend.append(key, StudformData[key]);
-        });
-        const response = await axios.post(
-          "http://localhost:8000/teacher/add_student/",
-          formDataToSend,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data", // Set content type to multipart/form-data
-            },
+          if (key !== 'id' && key !== 'regid' && key !== 'image' && key !== 'qrcode') { 
+            formDataToSend.append(key, StudformData[key]);
           }
-        );
-        console.log(response.data);
-        // Reset the form data and errors
-        resetForm();
-      } catch (error) {
-        if (error.response && error.response.status === 403) {
-          console.error("Error adding student data: Forbidden");
-        } else {
-          console.error("Error adding student data:", error);
+        });
+        
+        if (StudformData.image) {
+          formDataToSend.append('image', StudformData.image); 
         }
+        
+        if (StudformData.regid && StudformData.mobno) {
+          const qrText = `${StudformData.regid}-${StudformData.mobno}`;
+          try {
+            const qrCode = await download(qrText);
+            const qrCodeBlob = new Blob([qrCode], { type: 'image/png' });
+            formDataToSend.append("qrcode", qrCodeBlob, 'qrcode.png');
+          } catch (error) {
+            console.error("Error generating QR Code:", error);
+          }
+        }
+        
+        console.log("Send Data",formDataToSend);
+        const response = await axios.patch(
+          `https://school-erp-system-ufbu.onrender.com/Teachers/studentupdate/${state.regid}/`,
+          formDataToSend
+        );
+        console.log(response);
+        toast.success("Student updated successfully");
+        navigate("/teacherdashboard");
+      } catch (error) {
+        console.error("Error updating student:", error);
+        toast.error("Error updating student");
       }
-    } else {
-      setErrors(errors);
     }
   };
-
-  const validateForm = (StudformData) => {
+    const validateForm = (StudformData) => {
     const errors = {};
     if (!StudformData.name) {
       errors.name = "Name is required";
@@ -237,26 +221,38 @@ const EditStudent = () => {
   };
 
   //download
-  const download = () => {
-    const svg = document.getElementById("QRCode");
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      const pngFile = canvas.toDataURL("image/png");
-      const downloadLink = document.createElement("a");
+  
+  const download = (text) => {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement("canvas");
+        const qrCode = document.createElement("div");
+        const qrCodeComponent = (
+            <QRCode value={text} size={200} level="H" />
+        );
 
-      //name of image
-      downloadLink.download = `${inputValue}`;
-      downloadLink.href = `${pngFile}`;
-      downloadLink.click();
-    };
-    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
-  };
+        // Render QR code in a canvas
+        ReactDOM.render(qrCodeComponent, qrCode, () => {
+            const svg = qrCode.querySelector("svg");
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const img = new Image();
+
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const context = canvas.getContext("2d");
+                context.drawImage(img, 0, 0);
+                canvas.toBlob((blob) => {
+                    if (blob) resolve(blob);
+                    else reject(new Error("Failed to create QR code blob."));
+                });
+            };
+
+            img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+        });
+    });
+};
+
+  
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -276,45 +272,11 @@ const EditStudent = () => {
   };
   return (
     <div id="EditStud" onClick={handleOutsideClick}>
-        <div className="student-info-container">
-        <div className="student-navbar">
-          <div className="student-details">
-            <h2 className="student-name">John Doe</h2>
-            <p className="student-reg-no">Reg No: 123456789</p>
-            <p className="student-reg-no">Seventh - A</p>
-          </div>
-          <div className="student-photo-container">
-        <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div
-                className="dropdown-menu">
-                <ul>
-                  <li>
-                    <a >John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a >Seventh</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* < div className="format"> */}
+       <div id="teachnav">
+    <Teachnav/>
+    </div>
+     
+             {/* < div className="format"> */}
       <div className="home-button-container">
       <button className="home-button" onClick={() => window.history.back()}>
       <i class="fa fa-arrow-left" aria-hidden="true"></i> Back

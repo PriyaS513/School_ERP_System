@@ -6,15 +6,33 @@ import img from "../Images/student1.jpeg";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+
+
+
+
 const Principal = () => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [image, setImage] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    regid: "",
+    email: "",
+    mobile: "",
+    education: "",
+    post: "",
+    passw: "",
+    confirmPass: "",
+    //image: null, // Add image property to formData
+  });
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const handlePhotoClick = () => {
     setShowDropdown(!showDropdown);
   };
 
   const handleLogout = () => {
-    // Add logout logic here
     toast.success('Logout Successfully!', {
       position: "top-right",
       autoClose: 2000,
@@ -35,30 +53,13 @@ const Principal = () => {
     }
   };
 
-  const [image, setImage] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    regid:"",
-    email: "",
-    mobile: "",
-    education: "",
-    post: "",
-    passw: "",
-    confirmPass: "",
-    image: null, //Add image property to formData
-  });
-
-  const [errors, setErrors] = useState({});
-  const navigate = useNavigate();
   const handleInputChange = (event) => {
     if (event.target.name === "image") {
-      // If the input is an image, set the image property in formData
       setFormData({
         ...formData,
         image: event.target.files[0], // Set the image file
       });
     } else {
-      // For other inputs, update the formData as usual
       setFormData({
         ...formData,
         [event.target.name]: event.target.value,
@@ -89,6 +90,8 @@ const Principal = () => {
     reader.readAsDataURL(file);
   };
 
+ 
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const errors = validateForm(formData);
@@ -96,11 +99,14 @@ const Principal = () => {
       try {
         const formDataToSend = new FormData();
         Object.keys(formData).forEach((key) => {
-          formDataToSend.append(key, formData[key]);
+          if (key !== "confirmPass") formDataToSend.append(key, formData[key]);
         });
-
+        if (image) {
+          formDataToSend.append('image', image);
+      }
+  
         const response = await axios.post(
-          "http://localhost:8000/principal/add_teacher/",
+          `https://school-erp-system-ufbu.onrender.com/principal/add_teacher/`,
           formDataToSend,
           {
             headers: {
@@ -108,91 +114,59 @@ const Principal = () => {
             },
           }
         );
-
+  
         console.log(response.data);
-        toast.success('Teacher saved successfully!', {
-          position: "top-right",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-        });
+        toast.success("Teacher saved successfully!", { autoClose: 2000 });
         resetForm();
       } catch (error) {
-        if (error.response && error.response.status === 403) {
-          console.error("Error adding teacher data: Forbidden");
-        } else {
-          console.error("Error adding teacher data:", error);
-        }
+        console.error("Error adding teacher data:", error);
+        toast.error("Failed to save teacher!", { autoClose: 2000 });
       }
     } else {
       setErrors(errors);
     }
   };
+  
+  const sendLoginCredentials = (email, password) => {
+    axios.post("http://127.0.0.1:8000/send-login-credentials/", { email, password });
+  };
 
   const validateForm = (formData) => {
     const errors = {};
-    if (!formData.name) {
-      errors.name = "Name is required";
-    }
-    if (!formData.regid) {
-      errors.regid = "ID is required";
-    }
-    if (!formData.email) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Email is invalid";
-    }
-    if (!formData.mobile) {
-      errors.mobile = "Mobile number is required";
-    } else if (!/^\d{10}$/.test(formData.mobile)) {
-      errors.mobile = "Mobile number is invalid";
-    }
-    if (!formData.education) {
-      errors.education = "Education is required";
-    }
-    if (!formData.post) {
-      errors.post = "Post is required";
-    }
-    if (!formData.passw.trim()) {
-      errors.passw = "Password is required";
-    } else if (formData.passw.length < 8) {
-      errors.passw = "password should be at least 8 char";
-    }
-    if (!formData.confirmPass.trim()) {
-      errors.confirmPass = "Confirm Password is required";
-    } else if (formData.confirmPass !== formData.passw) {
-      errors.confirmPass = "Password and Confirm Password should be same";
-    }
+    if (!formData.name) errors.name = "Name is required";
+    if (!formData.regid) errors.regid = "ID is required";
+    if (!formData.email) errors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = "Email is invalid";
+    if (!formData.mobile) errors.mobile = "Mobile number is required";
+    else if (!/^\d{10}$/.test(formData.mobile)) errors.mobile = "Mobile number is invalid";
+    if (!formData.education) errors.education = "Education is required";
+    if (!formData.post) errors.post = "Post is required";
+    if (!formData.passw.trim()) errors.passw = "Password is required";
+    else if (formData.passw.length < 8) errors.passw = "Password should be at least 8 characters";
+    if (!formData.confirmPass.trim()) errors.confirmPass = "Confirm Password is required";
+    else if (formData.confirmPass !== formData.passw) errors.confirmPass = "Passwords do not match";
     return errors;
   };
-  const boxSize = 80;
 
-  const fileInputRef = useRef(null);
+  const resetForm = () => {
+    setImage(null);
+    setFormData({
+      name: "",
+      regid: "",
+      email: "",
+      mobile: "",
+      education: "",
+      post: "",
+      passw: "",
+      confirmPass: "",
+      image: null,
+    });
+    setErrors({});
+    fileInputRef.current.value = "";
+  };
 
-const resetForm = () => {
-  setImage(null);
-  // Reset the form data and errors
-  setFormData({
-    name: "",
-    regid: "",
-    email: "",
-    mobile: "",
-    education: "",
-    post: "",
-    passw: "",
-    confirmPass: "",
-    image: null,
-  });
-  setErrors({});
-  fileInputRef.current.value = "";
-  fileInputRef.current.files = null;
-  fileInputRef.current = null; // Create a new reference to the file input element
-};
   const resetFormPhoto = () => {
-    setImage(null); // reset the image state variable to null
+    setImage(null);
     fileInputRef.current.value = null;
   };
 
@@ -213,48 +187,32 @@ const resetForm = () => {
               onClick={handlePhotoClick}
             />
             {showDropdown && (
-              <div
-                className="dropdown-menu"
-              >
+              <div className="dropdown-menu">
                 <ul>
-                  <li>
-                    <a >John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
+                  <li><a>John Doe</a></li>
+                  <li><a>Reg No: 123456789</a></li>
+                  <li><a onClick={handleLogout}>Logout</a></li>
                 </ul>
               </div>
             )}
           </div>
         </div>
       </div>
-      {/* < div className="format"> */}
       <div className="home-button-container">
         <button className="home-button" onClick={() => navigate("/Principalprofile")}>
-        <i class="fa fa-arrow-left" aria-hidden="true"></i> Back
+          <i className="fa fa-arrow-left" aria-hidden="true"></i> Back
         </button>
       </div>
       <h2 className="heading-teac">Add Teacher details</h2>
-      <form
-        onSubmit={handleSubmit}
-        action="teacher"
-        method="post"
-        id="teacher-form"
-      >
+      <form onSubmit={handleSubmit} action="teacher" method="post" id="teacher-form">
         <div className="card-body media align-items-center">
           <img
             src={image || "https://bootdey.com/img/Content/avatar/avatar1.png"}
             alt="teacher"
             className="d-block ui-w-80"
             style={{
-              width: `${boxSize}px`,
-              height: `${boxSize}px`,
+              width: "80px",
+              height: "80px",
               objectFit: "cover",
               borderRadius: "50%",
             }}
@@ -273,23 +231,15 @@ const resetForm = () => {
                 aria-label="Upload new photo"
                 required
               />
-            </label>{" "}
-            <button
-              type="button"
-              className="btn btn-default md-btn-flat"
-              onClick={resetFormPhoto}
-            >
-              Reset
-            </button>
-            <div className="small mt-1">
-              Allowed JPG,GIF or PNG. Max size of 800K
-            </div>
+            </label>
+            <button type="button" className="btn btn-default md-btn-flat" onClick={resetFormPhoto}>Reset</button>
+            <div className="small mt-1">Allowed JPG,GIF or PNG. Max size of 800K</div>
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group col-md-6">
-          <label>Name</label>
+            <label>Name</label>
             <input
               type="text"
               className="form-control mb-1"
@@ -300,10 +250,10 @@ const resetForm = () => {
               placeholder="Enter name"
               required
             />
-                        {errors.name && <div style={{ color: "red" }}>{errors.name}</div>}
+            {errors.name && <div style={{ color: "red" }}>{errors.name}</div>}
           </div>
           <div className="form-group col-md-6">
-          <label>Registration Id</label>
+            <label>Registration Id</label>
             <input
               type="text"
               className="form-control"
@@ -316,13 +266,13 @@ const resetForm = () => {
             />
             {errors.regid && <div style={{ color: "red" }}>{errors.regid}</div>}
           </div>
-          </div>
-          <div className="form-row">
+        </div>
+        <div className="form-row">
           <div className="form-group col-md-6">
-          <label>Email Id</label>
+            <label>Email</label>
             <input
               type="email"
-              className="form-control mb-1"
+              className="form-control"
               id="email-input"
               name="email"
               value={formData.email}
@@ -333,9 +283,9 @@ const resetForm = () => {
             {errors.email && <div style={{ color: "red" }}>{errors.email}</div>}
           </div>
           <div className="form-group col-md-6">
-          <label>Mobile No</label>
+            <label>Mobile Number</label>
             <input
-              type="tel"
+              type="text"
               className="form-control"
               id="mobile-input"
               name="mobile"
@@ -346,24 +296,24 @@ const resetForm = () => {
             />
             {errors.mobile && <div style={{ color: "red" }}>{errors.mobile}</div>}
           </div>
-          </div>
-          <div className="form-row">
+        </div>
+        <div className="form-row">
           <div className="form-group col-md-6">
-          <label>Education</label>
+            <label>Education</label>
             <input
               type="text"
-              className="form-control mb-1"
+              className="form-control"
               id="education-input"
               name="education"
               value={formData.education}
               onChange={handleInputChange}
-              placeholder="Enter education"
+              placeholder="Enter education details"
               required
             />
             {errors.education && <div style={{ color: "red" }}>{errors.education}</div>}
           </div>
           <div className="form-group col-md-6">
-          <label>Post</label>
+            <label>Post</label>
             <input
               type="text"
               className="form-control"
@@ -371,52 +321,45 @@ const resetForm = () => {
               name="post"
               value={formData.post}
               onChange={handleInputChange}
-              placeholder="Enter post"
+              placeholder="Enter teacher post"
               required
             />
             {errors.post && <div style={{ color: "red" }}>{errors.post}</div>}
           </div>
-          </div>
-          <div className="form-row">
+        </div>
+
+        <div className="form-row">
           <div className="form-group col-md-6">
-          <label>Enter Password</label>
+            <label>Password</label>
             <input
               type="password"
-              className="form-control mb-1"
-              id="post-input"
+              className="form-control"
+              id="password-input"
               name="passw"
               value={formData.passw}
               onChange={handleInputChange}
-              placeholder="Enter Password"
+              placeholder="Enter password"
               required
             />
             {errors.passw && <div style={{ color: "red" }}>{errors.passw}</div>}
           </div>
           <div className="form-group col-md-6">
-          <label>Confirm Password</label>
+            <label>Confirm Password</label>
             <input
               type="password"
               className="form-control"
-              id="confirm-input"
+              id="confirm-password-input"
               name="confirmPass"
               value={formData.confirmPass}
               onChange={handleInputChange}
-              placeholder="Confirm Password"
+              placeholder="Confirm password"
               required
             />
             {errors.confirmPass && <div style={{ color: "red" }}>{errors.confirmPass}</div>}
           </div>
         </div>
-        <div className="form-row">
-        <div className="form-group col-md-6">
-          <button type="submit" className="btn btn-primary">
-            Save changes
-          </button>
-          <button type="button" className="btn btn-default" onClick={resetForm}>
-            Reset From
-          </button>
-        </div>
-        </div>
+
+        <button type="submit" className="btn btn-primary">Save Teacher</button>
       </form>
       <ToastContainer />
     </div>

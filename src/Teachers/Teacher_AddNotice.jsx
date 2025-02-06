@@ -5,6 +5,11 @@ import img from "../Images/student1.jpeg";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Teachnav from "./teachernav.jsx";
+
+
+const SCREEN_SIZE_BREAKPOINT = 768;
+const TIMEOUT_DURATION = 2000;
 
 function AddNotice() {
   const navigate = useNavigate();
@@ -18,7 +23,7 @@ function AddNotice() {
     // Add logout logic here
     toast.success('Logout Successfully!', {
       position: "top-right",
-      autoClose: 2000,
+      autoClose: TIMEOUT_DURATION,
       hideProgressBar: false,
       closeOnClick: true,
       pauseOnHover: true,
@@ -27,7 +32,7 @@ function AddNotice() {
     });
     setTimeout(() => {
       navigate('/');
-    }, 2000);
+    }, TIMEOUT_DURATION);
   };
 
   const handleOutsideClick = (e) => {
@@ -46,7 +51,7 @@ function AddNotice() {
   useEffect(() => {
     const handleResize = () => {
       const dateInput = document.getElementById('date-input');
-      if (window.innerWidth <= 768) {
+      if (window.innerWidth <= SCREEN_SIZE_BREAKPOINT) {
         dateInput.type = 'text';
         dateInput.setAttribute('placeholder', 'dd/mm/yyyy');
       } else {
@@ -61,7 +66,7 @@ function AddNotice() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleInputChangeNotice = (event) => {
+  const handleInputChange = (event) => {
     setForm({
       ...form,
       [event.target.name]: event.target.value,
@@ -74,13 +79,18 @@ function AddNotice() {
     const errors = validateNotice(form);
     if (Object.keys(errors).length === 0) {
       try {
+        // Ensure the date is in YYYY-MM-DD format
+        const date = new Date(form.noticeDate);
+        const formattedDate = date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
+
+        // Create the FormData object with the formatted date
         const formDataToSend = new FormData();
-        Object.keys(form).forEach((key) => {
-          formDataToSend.append(key, form[key]);
-        });
+        formDataToSend.append('noticeTitle', form.noticeTitle);
+        formDataToSend.append('noticeContent', form.noticeContent);
+        formDataToSend.append('noticeDate', formattedDate); // Use formatted date
 
         await axios.post(
-          "http://localhost:8000/teacher/add_notice/",
+          `https://school-erp-system-ufbu.onrender.com/home/add_notice/`,
           formDataToSend,
           {
             headers: {
@@ -89,10 +99,9 @@ function AddNotice() {
           }
         );
 
-        // Show success alert
         toast.success('Notice added successfully!', {
           position: "top-right",
-          autoClose: 2000,
+          autoClose: TIMEOUT_DURATION,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
@@ -100,19 +109,15 @@ function AddNotice() {
           progress: undefined,
         });
 
-        resetFormNotice(); // Reset the form after submission
+        resetFormNotice();
       } catch (err) {
-        if (err.response && err.response.status === 403) {
-          console.error("Error adding notice data: Forbidden");
-        } else {
-          console.error("Error adding notice data:", err);
-        }
+        console.error("Error adding notice data:", err);
       }
     } else {
       setErrors(errors);
     }
   };
-
+  
   const validateNotice = (form) => {
     const errors = {};
     if (!form.noticeTitle) {
@@ -138,40 +143,10 @@ function AddNotice() {
 
   return (
     <div id="add_notice" onClick={handleOutsideClick}>
-      <div className="student-info-container">
-        <div className="student-navbar">
-          <div className="student-details">
-            <h2 className="student-name">John Doe</h2>
-            <p className="student-reg-no">Reg No: 123456789</p>
-            <p className="student-reg-no">Teacher</p>
-          </div>
-          <div className="student-photo-container">
-            <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div className="dropdown-menu">
-                <ul>
-                  <li>
-                    <a >John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+    <div id="teachnav">
+    <Teachnav/>
+    </div>
+     
       <div className="home-button-container">
         <button className="home-button" onClick={() => navigate('/Teacherprofile/Noticepage')}>
           <i className="fa fa-arrow-left" aria-hidden="true"></i> Back
@@ -193,7 +168,7 @@ function AddNotice() {
               name="noticeTitle"
               placeholder="Enter notice title"
               value={form.noticeTitle}
-              onChange={handleInputChangeNotice}
+              onChange={handleInputChange}
             />
             {errors.noticeTitle && (
               <p className="text-danger">{errors.noticeTitle}</p>
@@ -207,7 +182,7 @@ function AddNotice() {
               rows="5"
               placeholder="Enter notice content"
               value={form.noticeContent}
-              onChange={handleInputChangeNotice}
+              onChange={handleInputChange}
             ></textarea>
             {errors.noticeContent && (
               <p className="text-danger">{errors.noticeContent}</p>
@@ -221,7 +196,7 @@ function AddNotice() {
               id="date-input"
               name="noticeDate"
               value={form.noticeDate}
-              onChange={handleInputChangeNotice}
+              onChange={handleInputChange}
               placeholder="" // This will be managed by JavaScript
             />
             {errors.noticeDate && (

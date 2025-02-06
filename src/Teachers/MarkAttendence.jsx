@@ -7,6 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import img from '../Images/student1.jpeg';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Teachnav from "./teachernav.jsx";
+
+
 
 function MarkAttendance() {
   const navigate = useNavigate();
@@ -59,9 +62,9 @@ function MarkAttendance() {
 
   const webcamScan = (result) => {
     if (result) {
-      const mobile = result.split("-")[0];
+      const [mobile, regId] = result.split("-");
       setWebCamResult(mobile);
-      sendSMS(mobile);
+      sendSMS(mobile, regId);
       toast.success('Attendance marked successfully!', {
         position: "top-right",
         autoClose: 2000,
@@ -73,10 +76,13 @@ function MarkAttendance() {
       });
     }
   };
-
-  const sendSMS = (mobile) => {
-    axios.post('http://localhost:8000/teacher/mark_attendance_and_send_message/', {
+   
+  const sendSMS = (mobile, regId) => {
+    console.log(mobile);
+     console.log(regId);
+    axios.post(`https://school-erp-system-ufbu.onrender.com/Teachers/sendsms/`, {
       mobile_number: mobile,
+      regid: regId,
     })
     .then(response => {
       console.log(response);
@@ -92,33 +98,10 @@ function MarkAttendance() {
 
   return (
     <div id="MarkAttendance" onClick={handleOutsideClick}>
-      <div className="student-info-container">
-        <div className="student-navbar">
-          <div className="student-details">
-            <h2 className="student-name">John Doe</h2>
-            <p className="student-reg-no">Reg No: 123456789</p>
-            <p className="student-reg-no">Teacher</p>
-          </div>
-          <div className="student-photo-container">
-            <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div className="dropdown-menu">
-                <ul>
-                  <li><a>John Doe</a></li>
-                  <li><a>Reg No: 123456789</a></li>
-                  <li><a onClick={handleLogout}>Logout</a></li>
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="home-button-container">
+      <div id="teachnav">
+    <Teachnav/>
+    </div>
+           <div className="home-button-container">
         <button className="home-button" onClick={() => navigate('/Teacherprofile/Attendancepage')}>
           <i className="fa fa-arrow-left" aria-hidden="true"></i> Back
         </button>

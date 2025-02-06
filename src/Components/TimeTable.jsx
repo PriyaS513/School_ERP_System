@@ -1,37 +1,66 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import img from '../Images/student1.jpeg';
 import "./TimeTable.css";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
+import Studnav from "./studentnav.jsx";
 
-const Studenttimetable = () => {
+
+
+
+const StudentTimetable = () => {
   const [timetableUrl, setTimetableUrl] = useState(null);
-    const navigate = useNavigate();
-    const [showDropdown, setShowDropdown] = useState(false);
+  const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [studentScalss, setstudentScalss] = useState(null);
 
+  // Fetch teacher email from Teachnav component
+  const getClass = (sclass) => {
+    setstudentScalss(sclass);
+  };
 
+  // Fetch timetable on component mount
+  useEffect(() => {
+    const fetchTimetable = async () => {
+      if (!studentScalss) return;
+
+      try {
+        const response = await axios.post(`https://school-erp-system-ufbu.onrender.com/principal/getTimetable/`, {
+          sclass: studentScalss,
+        });
+        if (response.data.image) {
+          setTimetableUrl(response.data.image);
+        } else {
+          toast.info("No timetable found for your class.");
+        }
+      } catch (error) {
+        console.error("Error fetching timetable:", error.response?.data || error.message);
+        toast.error('Failed to load timetable. Please try again later.');
+      }
+    };
+
+    fetchTimetable();
+  }, [studentScalss]);
+
+  // Toggle dropdown menu
   const handlePhotoClick = () => {
     setShowDropdown(!showDropdown);
   };
 
+  // Logout logic
   const handleLogout = () => {
-    // Add logout logic here
-    toast.success('Logout Successfully!', {
+    toast.success('Logged out successfully!', {
       position: "top-right",
       autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
     });
     setTimeout(() => {
       navigate('/');
     }, 2000);
   };
 
+  // Handle clicks outside the dropdown to close it
   const handleOutsideClick = (e) => {
     if (!e.target.closest('.student-photo-container')) {
       setShowDropdown(false);
@@ -40,64 +69,36 @@ const Studenttimetable = () => {
 
   return (
     <div id="displayStudTT" onClick={handleOutsideClick}>
-        <div className="student-navbar">
-        <div className="student-details">
-          <h2 className="student-name">John Doe</h2>
-          <p className="student-reg-no">Reg No: 123456789</p>
-          <p className="student-reg-no">Seventh</p>
-        </div>
-        <div className="student-photo-container">
-        <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div
-                className="dropdown-menu">
-                <ul>
-                  <li>
-                    <a>John Doe</a>
-                  </li>
-                  <li>
-                    <a >Reg No: 123456789</a>
-                  </li>
-                  <li>
-                    <a >Seventh</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>
-                      Logout
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
+      {/* Navbar */}
+      <div id="teachnav">
+        <Studnav getClass={getClass} />
       </div>
 
-      <div div className="format">
-      <div className="home-button-container">
-        <button className="home-button" onClick={() => navigate('/Studentprofile')}>
-        <i class="fa fa-arrow-left" aria-hidden="true"></i>
-        Back
-        </button>
+      {/* Back button */}
+      <div className="format">
+        <div className="home-button-container">
+          <button className="home-button" onClick={() => navigate('/')}>
+            <i className="fa fa-arrow-left" aria-hidden="true"></i> Back
+          </button>
+        </div>
       </div>
-      </div>
+
+      {/* Timetable display */}
       <div className="container-fluid">
         <h2>Time Table</h2>
         <div className="table-responsive">
-        {timetableUrl ? (
-                        <img src={timetableUrl} alt="Timetable" className="uploaded-timetable" />
-                    ) : (
-                        <p>No timetable uploaded yet.</p>
-                    )}
+          {timetableUrl ? (
+            <img src={timetableUrl} alt="Timetable" className="uploaded-timetable" />
+          ) : (
+            <p>No timetable uploaded yet.</p>
+          )}
         </div>
       </div>
+
+      {/* Toast notifications */}
       <ToastContainer />
     </div>
   );
 };
 
-export default Studenttimetable;
+export default StudentTimetable;

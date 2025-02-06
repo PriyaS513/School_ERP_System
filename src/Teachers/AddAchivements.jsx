@@ -6,29 +6,15 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import trophy from "../Images/trophy.png";
+import Teachnav from "./teachernav.jsx";
+
+
+
 function AddAchivements() {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const handlePhotoClick = () => {
-    setShowDropdown(!showDropdown);
-  };
-
-  const handleLogout = () => {
-    toast.success('Logout Successfully!', {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-    });
-    setTimeout(() => {
-      navigate('/');
-    }, 2000);
-  };
-
+  
   const handleOutsideClick = (e) => {
     if (!e.target.closest('.student-photo-container')) {
       setShowDropdown(false);
@@ -42,7 +28,7 @@ function AddAchivements() {
   const [data, setData] = useState({
     title: "",
     content: "",
-    image: null,
+    //image: null,
   });
 
   const handleInputChangePhoto = (event) => {
@@ -88,12 +74,19 @@ function AddAchivements() {
     if (Object.keys(errors).length === 0) {
       try {
         const formDataToSend = new FormData();
-        Object.keys(data).forEach((key) => {
-          formDataToSend.append(key, data[key]);
-        });
-  
+        formDataToSend.append("title", data.title);
+        formDataToSend.append("content", data.content);
+        if (image){
+          formDataToSend.append("image", image);}
+
+// Debugging: Check FormData content
+        for (const [key, value] of formDataToSend.entries()) {
+         console.log(`${key}: ${value}`);
+        }
+
+
         await axios.post(
-          "http://localhost:8000/teacher/add_achievements/",
+          `https://school-erp-system-ufbu.onrender.com/home/add_achievement/`,
           formDataToSend,
           {
             headers: {
@@ -101,30 +94,35 @@ function AddAchivements() {
             },
           }
         );
-
-        toast.success('Achievement added successfully!', {
+  
+        toast.success("Achievement added successfully!", {
           position: "top-right",
           autoClose: 2000,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          progress: undefined,
         });
-        
+  
         resetFormAchivement();
+       // navigate("/Teacherprofile/Achivementpage");
       } catch (error) {
-        if (error.response && error.response.status === 403) {
-          console.error("Error adding achivement data: Forbidden");
-        } else {
-          console.error("Error adding achivement data:", error);
-        }
+        const errorMessage =
+          error.response?.data?.message || "An unexpected error occurred!";
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     } else {
       setErrors(errors);
     }
   };
-
+  
   const ValidateAchivement = (data) => {
     const errors = {};
     if (!data.title) {
@@ -154,33 +152,13 @@ function AddAchivements() {
 
   return (
     <div id="AddAchivements" onClick={handleOutsideClick}>
-      <div className="student-info-container">
-        <div className="student-navbar">
-          <div className="student-details">
-            <h2 className="student-name">John Doe</h2>
-            <p className="student-reg-no">Reg No: 123456789</p>
-            <p className="student-reg-no">Teacher</p>
-          </div>
-          <div className="student-photo-container">
-            <img
-              src={img}
-              alt="Student"
-              className="student-photo"
-              onClick={handlePhotoClick}
-            />
-            {showDropdown && (
-              <div className="dropdown-menu">
-                <ul>
-                  <li><a href="#!">John Doe</a></li>
-                  <li><a href="#!">Reg No: 123456789</a></li>
-                  <li><a href="#!" onClick={handleLogout}>Logout</a></li>
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="home-button-container">
+       <div id="teachnav">
+    <Teachnav/>
+    </div>
+     
+        
+        
+              <div className="home-button-container">
         <button className="home-button" onClick={() => navigate("/Teacherprofile/Achivementpage")}>
           <i className="fa fa-arrow-left" aria-hidden="true"></i> Back
         </button>
