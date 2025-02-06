@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './MarkAttendence.css';
 import axios from "axios";
-import QrReader from 'react-qr-reader';
+import {QrReader} from 'react-qr-reader';
 import QrScanner from "qr-scanner";
 import { useNavigate } from 'react-router-dom';
 import img from '../Images/student1.jpeg';
