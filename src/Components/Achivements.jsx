@@ -119,16 +119,17 @@ const Achivement = () => {
 
 <div className="card1-container">
         <article className=" card1">
-               
+
                   <img
                     src={achievements.image}
                     className="card1__background  card1-img-top"
                     alt="Achievement"
                   />
+            
                   <div className="card1__content flow">
                     <div className="card1__content--container flow">
                       <h2 className="card1__title">{achievements.title}</h2>
-                      <p className="card1__description">{achievements.title}</p>
+                      <p className="card1__description">{achievements.content}</p>
                     </div>
                 </div>
                 </article>
